@@ -1,0 +1,49 @@
+---
+- name: optimization | sysctl.
+  copy:
+    src: 7-sysctl.conf
+    dest: /etc/sysctl.d/
+  tags:
+   - sysctl
+      
+- name: optimization | limits.
+  blockinfile:
+    path: /etc/security/limits.d/99-limits.conf
+    backup: yes
+    create: yes
+    marker: "# ansible os-init {mark}"
+    block: |
+      root soft nofile 102400
+      root hard nofile 102400
+      root soft nproc 102400
+      root hard nproc 102400
+      root soft core unlimited
+      root hard core unlimited
+      * soft nofile 102400
+      * hard nofile 102400
+      * soft nproc 102400
+      * hard nproc 102400
+      * soft core unlimited
+      * hard core unlimited
+  tags:
+   - limits
+      
+- name: optimization | systemd limits.
+  blockinfile:
+    path: /etc/systemd/system.conf
+    backup: yes
+    create: yes
+    marker: "# ansible os-init {mark}"
+    block: |
+      DefaultLimitCORE=infinity
+      DefaultLimitNOFILE=102400
+      DefaultLimitNPROC=102400
+  when: "ansible_service_mgr == 'systemd'"
+  tags:
+   - systemd-limits
+
+- name: optimization | package repository.
+  copy: "src={{ item.src }} dest={{ item.dest }}"
+  with_items: "{{ __package_repo }}"
+  tags:
+   - package-repo
